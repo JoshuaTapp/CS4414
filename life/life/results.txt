@@ -1,0 +1,50 @@
+input/make-a for 1000 terations
+---TIMING---
+serial: 71632196 cycles (71 M)
+1 thread: 109598151 cycles (109 M)
+2 threads: 71078781 cycles (71 M)
+3 threads: 81447673 cycles (81 M)
+4 threads: 67265016 cycles (67 M)
+8 threads: 94053492 cycles (94 M)
+40 threads: 538446396 cycles (538 M)
+-----------------------------------
+input/o0075 for 1001 iterations
+---TIMING---
+serial: 28396376 cycles (28 M)
+1 thread: 52037748 cycles (52 M)
+2 threads: 43375713 cycles (43 M)
+3 threads: 37367188 cycles (37 M)
+4 threads: 56200353 cycles (56 M)
+8 threads: 87878145 cycles (87 M)
+40 threads: 534241179 cycles (534 M)
+-----------------------------------
+input/o0045-gun for 1000 iterations
+---TIMING---
+serial: 58568410 cycles (58 M)
+1 thread: 84614637 cycles (84 M)
+2 threads: 65640140 cycles (65 M)
+3 threads: 61295055 cycles (61 M)
+4 threads: 66623112 cycles (66 M)
+8 threads: 93210273 cycles (93 M)
+40 threads: 531514929 cycles (531 M)
+-----------------------------------
+input/puf-qb-c3 for 51 iterations
+---TIMING---
+serial: 767318970 cycles (767 M)
+1 thread: 873801607 cycles (873 M)
+2 threads: 464361350 cycles (464 M)
+3 threads: 329438360 cycles (329 M)
+4 threads: 262651662 cycles (262 M)
+8 threads: 267174438 cycles (267 M)
+40 threads: 220556937 cycles (220 M)
+-----------------------------------
+input/23334m for 10 iterations
+---TIMING---
+serial: 606586048 cycles (606 M)
+1 thread: 805115876 cycles (805 M)
+2 threads: 493429920 cycles (493 M)
+3 threads: 368273287 cycles (368 M)
+4 threads: 336656346 cycles (336 M)
+8 threads: 232553607 cycles (232 M)
+40 threads: 172573998 cycles (172 M)
+-----------------------------------
