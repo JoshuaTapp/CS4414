@@ -7,29 +7,12 @@
 
 class Task {
 public:
+    pthread_cond_t task_cv;
+    int finished = 0;
     Task();
     virtual ~Task();
 
     virtual void Run() = 0;  // implemented by subclass
-};
-
-class ThreadPool {
-public:
-    sem_t pool_sema;
-    WorkerQueue worker_queue;
-    NameMap name_map;
-
-    ThreadPool(int num_threads);
-
-    // Submit a task with a particular name.
-    void SubmitTask(const std::string &name, Task *task);
- 
-    // Wait for a task by name, if it hasn't been waited for yet. Only returns after the task is completed.
-    void WaitForTask(const std::string &name);
-
-    // Stop all threads. All tasks must have been waited for before calling this.
-    // You may assume that SubmitTask() is not caled after this is called.
-    void Stop();
 };
 
 // class to handle queue and write/read safety
@@ -60,11 +43,31 @@ public:
     Task* getTask(std::string name);
 };
 
-class WorkerThread {
-
+class ThreadPool {
 public:
-    WorkerThread();
+    sem_t pool_sema;
+    WorkerQueue worker_queue;
+    NameMap name_map;
+    pthread_t *ptids;
+    int num_threads;
 
+    ThreadPool(int num_threads);
 
+    // Submit a task with a particular name.
+    void SubmitTask(const std::string &name, Task *task);
+ 
+    // Wait for a task by name, if it hasn't been waited for yet. Only returns after the task is completed.
+    void WaitForTask(const std::string &name);
+
+    // Stop all threads. All tasks must have been waited for before calling this.
+    // You may assume that SubmitTask() is not caled after this is called.
+    void Stop();
+};
+
+struct thread_args {
+    WorkerQueue* queue;
+    ThreadPool* pool; 
+
+    thread_args(WorkerQueue* wq, ThreadPool* tp) : queue(wq), pool(tp) {}
 };
 #endif

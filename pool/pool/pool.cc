@@ -1,40 +1,51 @@
 #include "pool.h"
 
 Task::Task() {
-    //pthread_cond_init(&this->task_cv, NULL);
+    pthread_cond_init(&this->task_cv, NULL);
 }
 
 Task::~Task() {
-    //pthread_cond_signal(); // TODO: Is this even neccessary?
-    //pthread_cond_destroy(&this->task_cv);
+    pthread_cond_destroy(&this->task_cv);
+}
+
+void* WorkerThread(void* args) {
+    struct thread_args* params = (struct thread_args*) args;
+    WorkerQueue* queue = params->queue;
+    ThreadPool* pool = params->pool;
+    Task* task;
+    while(1) {
+        //printf("Starting Task\n");
+        task = queue->dequeueTask();
+        task->Run();
+        task->finished = 1;
+        pthread_cond_signal(&task->task_cv); 
+
+        // TODO: signal for any task waiting
+        delete task;
+    }
 }
 
 ThreadPool::ThreadPool(int num_threads) {
-    // initialize synch tools
-    sem_init(&pool_sema, 1, num_threads);
-
     this->worker_queue = WorkerQueue();
     this->name_map = NameMap();
+    this->num_threads = num_threads;
     
-    /*
     // Initialize thread array
-    pthread_t *ptids = new pthread_t[num_threads];
+    ptids = new pthread_t[num_threads];
+    // Create thread arguments
+    struct thread_args args = thread_args(&this->worker_queue, this);
+    struct thread_args *arg_ptr = &args;
+    
+    void* args_struct = arg_ptr;
+    int rtn;
     for(int i = 0; i < num_threads; ++i) {
-        pthread_t t = 0;
-        ptids[i] = t;
-    }
-
-    while(1) {
-        sem_wait(&pool_sema);
-        pthread_mutex_lock(&queue_lock);
-        if(task_queue.empty()) {
-           Task* t;
+        rtn = pthread_create(&this->ptids[i], NULL, &WorkerThread, args_struct);
+        if(rtn){
+            printf("Failed pthread_create: %i\n", rtn);
+            exit(-1);
 
         }
-
     }
-    */
-
 }
 
 void ThreadPool::SubmitTask(const std::string &name, Task* task) {
@@ -45,9 +56,21 @@ void ThreadPool::SubmitTask(const std::string &name, Task* task) {
 }
 
 void ThreadPool::WaitForTask(const std::string &name) {
+    pthread_mutex_t fakeLock;
+    pthread_mutex_init(&fakeLock, NULL);
+    pthread_mutex_lock(&fakeLock);
+    Task* task = this->name_map.getTask(name);
+    if(task != nullptr) {
+        while(task->finished) {
+            pthread_cond_wait(&task->task_cv, &fakeLock);
+        }
+    }
+
+    
 }
 
 void ThreadPool::Stop() {
+   
 }
 
 
@@ -57,8 +80,6 @@ WorkerQueue::WorkerQueue() {
     }
     
 WorkerQueue::~WorkerQueue() {
-        pthread_mutex_destroy(&queue_lock);
-        pthread_cond_destroy(&work_ready);
     }
 
 Task* WorkerQueue::dequeueTask() {
@@ -77,7 +98,7 @@ bool WorkerQueue::enqueueTask(Task* task) {
     bool success = false;
     pthread_mutex_lock(&queue_lock);
     task_queue.push_back(task);
-    if(&task_queue.back() == &task) {       // make sure task was actually pushed on queue.
+    if(task_queue.back() == task) {       // make sure task was actually pushed on queue.
         success = true;
         pthread_cond_signal(&work_ready);   // ! NOTE: might have to remove this if I get an error
     }
@@ -99,5 +120,10 @@ void NameMap::addToMap(std::string name, Task* task) {
 }
 
 Task* NameMap::getTask(std::string name) {
-
+    auto it = this->name_map.find(name);
+    if(it != this->name_map.end()) {
+        return it->second;
+    }
+    return nullptr;
 }
+
