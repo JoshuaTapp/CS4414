@@ -8,7 +8,9 @@
 class Task {
 public:
     pthread_cond_t task_cv;
-    int finished = 0;
+    pthread_mutex_t task_lock;
+    bool finished = false;
+    bool waited_on = false;
     Task();
     virtual ~Task();
 
@@ -50,6 +52,9 @@ public:
     pthread_t *ptids;
     int num_threads;
     bool stop = false;
+    pthread_cond_t wait;
+    bool wait_done = true;
+    sem_t threads_done;
 
     ThreadPool(int num_threads);
 
@@ -62,11 +67,5 @@ public:
     // Stop all threads. All tasks must have been waited for before calling this.
     // You may assume that SubmitTask() is not caled after this is called.
     void Stop();
-};
-
-struct thread_args {
-    ThreadPool* pool; 
-
-    thread_args(ThreadPool* tp) : pool(tp) {}
 };
 #endif
