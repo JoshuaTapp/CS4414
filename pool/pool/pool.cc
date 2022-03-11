@@ -9,17 +9,14 @@ Task::~Task() {
 }
 
 void* WorkerThread(void* args) {
-    struct thread_args* params = (struct thread_args*) args;
-    WorkerQueue* queue = params->queue;
-    ThreadPool* pool = params->pool;
-    Task* task;
+    ThreadPool* pool = (ThreadPool*) args;
+    
     while(1) {
         //printf("Starting Task\n");
-        task = queue->dequeueTask();
+        Task* task = pool->worker_queue.dequeueTask();
         task->Run();
         task->finished = 1;
         pthread_cond_signal(&task->task_cv); 
-
         // TODO: signal for any task waiting
         delete task;
     }
@@ -32,14 +29,10 @@ ThreadPool::ThreadPool(int num_threads) {
     
     // Initialize thread array
     ptids = new pthread_t[num_threads];
-    // Create thread arguments
-    struct thread_args args = thread_args(&this->worker_queue, this);
-    struct thread_args *arg_ptr = &args;
-    
-    void* args_struct = arg_ptr;
+
     int rtn;
     for(int i = 0; i < num_threads; ++i) {
-        rtn = pthread_create(&this->ptids[i], NULL, &WorkerThread, args_struct);
+        rtn = pthread_create(&this->ptids[i], NULL, &WorkerThread, (void*) this);
         if(rtn){
             printf("Failed pthread_create: %i\n", rtn);
             exit(-1);
