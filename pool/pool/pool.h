@@ -16,13 +16,12 @@ public:
 };
 
 // class to handle queue and write/read safety
-class WorkerQueue {
-private:
+class WorkerQueue {    
+public:
     pthread_mutex_t queue_lock;
     pthread_cond_t work_ready;
     std::deque<Task*> task_queue;
 
-public:
     WorkerQueue();
     
     ~WorkerQueue();
@@ -33,10 +32,10 @@ public:
 };
 
 class NameMap {
-private:
+public:
     std::map<std::string, Task*> name_map;
     pthread_mutex_t map_lock;
-public:
+
     NameMap();
     ~NameMap();
     void addToMap(std::string name, Task* task);
@@ -45,11 +44,12 @@ public:
 
 class ThreadPool {
 public:
-    sem_t pool_sema;
-    WorkerQueue worker_queue;
-    NameMap name_map;
+    pthread_mutex_t thread_lock;
+    WorkerQueue* worker_queue;
+    NameMap* name_map;
     pthread_t *ptids;
     int num_threads;
+    bool stop = false;
 
     ThreadPool(int num_threads);
 
@@ -65,9 +65,8 @@ public:
 };
 
 struct thread_args {
-    WorkerQueue* queue;
     ThreadPool* pool; 
 
-    thread_args(WorkerQueue* wq, ThreadPool* tp) : queue(wq), pool(tp) {}
+    thread_args(ThreadPool* tp) : pool(tp) {}
 };
 #endif
