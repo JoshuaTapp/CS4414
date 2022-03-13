@@ -38,6 +38,12 @@
     "utility": "cpp",
     "typeinfo": "cpp",
     "string": "cpp",
-    "atomic": "cpp"
+    "atomic": "cpp",
+    "mutex": "cpp",
+    "chrono": "cpp",
+    "ctime": "cpp",
+    "ratio": "cpp",
+    "system_error": "cpp",
+    "thread": "cpp"
   }
 }
