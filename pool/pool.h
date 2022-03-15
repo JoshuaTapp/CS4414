@@ -9,6 +9,7 @@
 class Task {
 public:
     sem_t done;     // * Used by WaitForTask to signal task is complete
+
     Task();
     virtual ~Task();
 

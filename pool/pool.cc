@@ -2,11 +2,9 @@
 
 Task::Task() {
     // * sema that signals the task is done, shared btw procs    
-    if(sem_init(&this->done, 1, 1) == -1) {
+    if(sem_init(&this->done, 0, 0) == -1) {
         printf("Task Semaphore failed to intialize");
-    }    
-    // * Tell ThreadPool, hasnt finished yet
-    sem_wait(&this->done);          
+    }       
 }
 
 Task::~Task() {
@@ -101,6 +99,7 @@ void ThreadPool::WaitForTask(const std::string &name) {
         // * Will only continue when task is done
         sem_wait(&task->done);
         sem_post(&task->done);
+        delete task;
     }
 
     // * Now remove this entry from the name_map
@@ -163,13 +162,13 @@ void* ThreadPool::WorkerThread(void* args) {
         // * run task using the Task's implementation
         // * if we have a nullptr, then Stop() has been called.
         if(task != nullptr) {
-            task->Run();                    
+            task->Run();     
+            // * task->done = 1 now, WaitForTask() can proceed
+            sem_post(&task->done);                 
         }
         else break;
         
-        // * task->done = 1 now, WaitForTask() can proceed
-        sem_post(&task->done);          
-        delete task;
+                
               
         pthread_mutex_lock(&pool->threadpool_mutex);
         if(pool->stop_threads) break;
