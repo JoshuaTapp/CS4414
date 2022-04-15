@@ -559,14 +559,20 @@ getproc(int pid)
 int
 getpagetableentry(int pid, int address)
 {
+  //dumppagetable(pid);
   struct proc* p = getproc(pid);
   if(p == 0) return 0;
 
   pte_t* pte = walkpgdir(p->pgdir, (void*) address, 0);
-
-  if(pte == 0) return 0;
-
   int addr = (int) *pte;
+
+  if(pte == 0x0 || (addr & PTE_P) == 0) 
+  {
+    return 0;
+  }
+  //cprintf("address: 0x%x   PTE: 0x%x   User?: %d\n", address, addr, (addr & PTE_U));
+  //cprintf("getpagetableentry(%d, 0x%x) = 0x%x\n", pid, address, addr);
+  //cprintf("Address: 0x%x,  P: %x, W: %x, U:%x\n", addr, (addr & PTE_P), (addr & PTE_W), (addr & PTE_U));
   return addr;
 }
 
@@ -622,5 +628,39 @@ dumppagetable(int pid)
     }
   }
 
+  return 0;
+}
+
+uint 
+getguardpage(int pid)
+{
+  struct proc* p = getproc(pid);
+  uint size = p->sz / PGSIZE; // total pages
+
+  for(uint i = 0; i <= size; i++)
+  {
+    pte_t* pgtab;
+    void* va = (void*) PGADDR(i, 0, 0);
+    pde_t* pde = &p->pgdir[PDX(va)];
+
+    if(*pde & PTE_P)
+    {
+
+      pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
+    
+      for(uint j = 0; j < NPTENTRIES; j++) 
+      {
+        void* va_entry = (void*) PGADDR(i, j, 0);
+        pte_t* pte = &pgtab[PTX(va_entry)];
+        if(pte > 0) 
+        {
+          if ((*pte & PTE_P) && !(*pte & PTE_U)) 
+          {
+            return j << PTXSHIFT;
+          }
+        }
+      }
+    }
+  }
   return 0;
 }

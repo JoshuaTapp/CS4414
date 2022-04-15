@@ -70,6 +70,7 @@ void            kfree(char*);
 void            kinit1(void*, void*);
 void            kinit2(void*, void*);
 int             pagefree(void* v);
+void            refincrement(uint pa);
 
 // kbd.c
 void            kbdintr(void);
@@ -125,6 +126,7 @@ void            yield(void);
 int             getpagetableentry(int pid, int address);
 int             isphysicalpagefree(int ppn);
 int             dumppagetable(int pid);
+uint            getguardpage(int pid);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

@@ -318,28 +318,39 @@ copyuvm(pde_t *pgdir, uint sz)
   pde_t *d;
   pte_t *pte;
   uint pa, i, flags;
-  char *mem;
+
+  //char *mem;
 
   if((d = setupkvm()) == 0)
     return 0;
+
   for(i = 0; i < sz; i += PGSIZE){
+
     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
+     // panic("copyuvm: pte should exist");
       continue;
     if(!(*pte & PTE_P))
+     // panic("copyuvm: page not present");
       continue;
+
+    *pte &= ~PTE_W;
+
     pa = PTE_ADDR(*pte);
+
     flags = PTE_FLAGS(*pte);
-    if((mem = kalloc()) == 0)
-      goto bad;
-    memmove(mem, (char*)P2V(pa), PGSIZE);
-    if(mappages(d, (void*)i, PGSIZE, V2P(mem), flags) < 0) {
-      kfree(mem);
+
+    if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0) { 
       goto bad;
     }
+
+    refincrement(pa); 
+
   }
+  lcr3(V2P(myproc()->pgdir));
   return d;
 
 bad:
+  lcr3(V2P(myproc()->pgdir));
   freevm(d);
   return 0;
 }

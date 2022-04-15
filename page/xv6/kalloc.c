@@ -8,6 +8,7 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "spinlock.h"
+unsigned char cow_reference_count[PHYSTOP / PGSIZE];
 
 
 #define for_each(node, list) for(struct run* node = list; node != 0; node = node->next)
@@ -68,14 +69,24 @@ kfree(char *v)
   if((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
     panic("kfree");
 
-  // Fill with junk to catch dangling refs.
-  memset(v, 1, PGSIZE);
-
   if(kmem.use_lock)
     acquire(&kmem.lock);
-  r = (struct run*)v;
-  r->next = kmem.freelist;
-  kmem.freelist = r;
+  
+  uint size = V2P((void*)v)/PGSIZE;
+  
+  if(cow_reference_count[size] != 0)
+     cow_reference_count[size]--;
+
+  if(cow_reference_count[size] == 0){
+
+  // Fill with junk to catch dangling refs.
+    memset(v, 1, PGSIZE);
+
+    r = (struct run*)v;
+    r->next = kmem.freelist;
+    kmem.freelist = r;
+  }
+
   if(kmem.use_lock)
     release(&kmem.lock);
 }
@@ -91,8 +102,14 @@ kalloc(void)
   if(kmem.use_lock)
     acquire(&kmem.lock);
   r = kmem.freelist;
+
+  uint index = V2P((void*) r)/PGSIZE;
+
   if(r)
+  {
     kmem.freelist = r->next;
+    cow_reference_count[index] = 1;
+  }
   if(kmem.use_lock)
     release(&kmem.lock);
   return (char*)r;
@@ -105,12 +122,28 @@ pagefree(void* v)
 
   //if((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
   //  panic("kfree");
+  int result = 0;
+
+  if(kmem.use_lock)
+    acquire(&kmem.lock);
   r = (struct run*)v;
   for_each(n , kmem.freelist)
   {
-    if(n == r) return 1;
+    if(n == r) result = 1;
   }
+   if(kmem.use_lock)
+    release(&kmem.lock);
 
-  return 0;
+  return result;
 }
 
+void refincrement(uint pa){
+  if(kmem.use_lock)
+    acquire(&kmem.lock);
+
+  uint index = pa / PGSIZE;
+  cow_reference_count[index]++;
+
+  if(kmem.use_lock)
+    release(&kmem.lock);
+}

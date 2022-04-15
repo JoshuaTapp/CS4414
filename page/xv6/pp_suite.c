@@ -5,7 +5,6 @@ static char *tests[][11] = {
         "exec",
         (char*) 0,
     },
-    
     {
         "oob",
         "-offset=0x1000",
@@ -17,14 +16,12 @@ static char *tests[][11] = {
         "-write",
         (char *) 0,
     },
-    /*
     {
         "oob",
         "-guard",
         "-offset=0x800",
         (char *) 0,
     },
-    
     {
         "oob",
         "-guard",
@@ -32,7 +29,6 @@ static char *tests[][11] = {
         "-write",
         (char *) 0,
     },
-    */
     {
         "alloc",
         "-size=0x1000",
@@ -53,7 +49,7 @@ static char *tests[][11] = {
     },
     {
         "alloc",
-        "-size=0x1000",
+        "-size=0x2000",
         "-read-start=0x40",
         "-read-end=0x100",
         "-write-start=0x0",
@@ -81,7 +77,7 @@ static char *tests[][11] = {
     },
     {
         "alloc",
-        "-size=0x500000",
+        "-size=0x5000000",
         "-read-start=0x402000",
         "-read-end=0x404000",
         "-write-start=0x404000",
@@ -102,7 +98,7 @@ static char *tests[][11] = {
         "-fork",
         (char*) 0,
     },
-    /*
+    
     {
         "cow",
         "-forks=1",
@@ -183,7 +179,7 @@ static char *tests[][11] = {
         "-pre-fork",
         (char*) 0,
     },
-    */
+    
     {
         "alloc",
         "-size=0x1000",
@@ -197,7 +193,7 @@ static char *tests[][11] = {
 
     {
         "alloc",
-        "-size=0x2000",
+        "-size=0x50000000",
         "-read-start=0x1040",
         "-read-end=0x1100",
         "-write-start=0x0",
@@ -215,7 +211,7 @@ static char *tests[][11] = {
         (char*) 0,
     },
 
-    /*
+    
     {
         "cow",
         "-forks=1",
@@ -226,7 +222,7 @@ static char *tests[][11] = {
         "-use-sys-read-child",
         (char*) 0,
     },
-    */
+    
     {
         (char*) 0,
     }
