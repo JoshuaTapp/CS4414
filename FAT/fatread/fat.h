@@ -4,6 +4,9 @@
 #include <cstdint>
 #include <vector>
 #include <string>
+#include <stdio.h>
+#include <stdlib.h>
+#include <cstring>
 
 /* This struct matches the FAT32 directory entry structure, described on pages 22-24 of 
  * the FAT specification. This is carefully laid out so it matches the on-disk format,
@@ -64,6 +67,16 @@ enum DirEntryAttributes {
     LONG_NAME_MASK  = 0x3F,
 };
 
+/*
+    * Struct representing file descriptors
+*/
+struct FAT_fd {
+    DirEntry *dir;
+    uint32_t fileSize;
+    uint32_t cluster;
+    bool free;
+};
+
 /* These are the functions you need to implement */
 extern bool fat_mount(const std::string &path);
 extern int fat_open(const std::string &path);
@@ -71,4 +84,12 @@ extern bool fat_close(int fd);
 extern int fat_pread(int fd, void *buffer, int count, int offset);
 extern std::vector<AnyDirEntry> fat_readdir(const std::string &path);
 
+// Declare my Helper Functions
+bool readBPB();
+bool readFat();
+bool readSectors(void* buffer, uint sectorNum, uint sectorCount);
+bool readCluster(uint cluster, void* buffer);
+uint32_t getFirstDataSector();
+
+void printBPB();
 #endif
