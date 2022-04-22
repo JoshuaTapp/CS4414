@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cstring>
+#include <sstream>
+#include <algorithm>
 
 /* This struct matches the FAT32 directory entry structure, described on pages 22-24 of 
  * the FAT specification. This is carefully laid out so it matches the on-disk format,
@@ -72,7 +74,6 @@ enum DirEntryAttributes {
 */
 struct FAT_fd {
     DirEntry *dir;
-    uint32_t fileSize;
     uint32_t cluster;
     bool free;
 };
@@ -87,9 +88,16 @@ extern std::vector<AnyDirEntry> fat_readdir(const std::string &path);
 // Declare my Helper Functions
 bool readBPB();
 bool readFat();
-bool readSectors(void* buffer, uint sectorNum, uint sectorCount);
-bool readCluster(uint cluster, void* buffer);
+int readSectors(void* buffer, uint sectorNum, int count, int offset);
+int readCluster(uint cluster, void* buffer, int count, int offset);
 uint32_t getFirstDataSector();
+std::vector<std::string> tokenizer(const std::string &path);
+uint32_t getClusterFromPath(const std::string &path);
+uint32_t getFileCluster(std::vector<DirEntry> dirEntry, std::string fileName);
+std::string formatDirName(uint8_t DIR_Name[11], bool isDir);
+bool readSectorsNoOffset(void* buffer, uint32_t sectorNum, uint sectorCount);
+bool readClusterNoOffset(uint32_t cluster, void* buffer);
 
 void printBPB();
+void printDirEntry(DirEntry dir);
 #endif

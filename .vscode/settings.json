@@ -1,12 +1,9 @@
 {
   "C_Cpp.errorSquiggles": "Disabled",
   "files.associations": {
-    "param.h": "c",
-    "user.h": "c",
-    "*.tcc": "cpp",
-    "deque": "cpp",
-    "vector": "cpp",
     "array": "cpp",
+    "atomic": "cpp",
+    "*.tcc": "cpp",
     "cctype": "cpp",
     "clocale": "cpp",
     "cmath": "cpp",
@@ -15,13 +12,17 @@
     "cstdio": "cpp",
     "cstdlib": "cpp",
     "cstring": "cpp",
+    "ctime": "cpp",
     "cwchar": "cpp",
     "cwctype": "cpp",
+    "deque": "cpp",
     "unordered_map": "cpp",
+    "vector": "cpp",
     "exception": "cpp",
     "fstream": "cpp",
     "functional": "cpp",
     "initializer_list": "cpp",
+    "iomanip": "cpp",
     "iosfwd": "cpp",
     "iostream": "cpp",
     "istream": "cpp",
@@ -37,14 +38,6 @@
     "type_traits": "cpp",
     "utility": "cpp",
     "typeinfo": "cpp",
-    "string": "cpp",
-    "atomic": "cpp",
-    "mutex": "cpp",
-    "chrono": "cpp",
-    "ctime": "cpp",
-    "ratio": "cpp",
-    "system_error": "cpp",
-    "thread": "cpp",
-    "spinlock.h": "c"
+    "string": "cpp"
   }
 }
