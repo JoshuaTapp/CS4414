@@ -307,19 +307,29 @@ std::vector<DirEntry> getDirEntryFromPath(const std::string &path)
     if (image == NULL)
         return dir;
     std::vector<std::string> tokens = tokenizer(path);
-    std::string rootPath = "/";
-    dir = readDirCluster(BPB->BPB_RootClus);
+
+    uint32_t cluster = BPB->BPB_RootClus;
+
+    dir = readDirCluster(cluster);
+    if(tokens.size() == 0)
+        return dir;
+
     std::vector<std::string>::iterator itr = tokens.begin();
     for (; itr != --tokens.cend(); ++itr)
     {
         std::string str = *itr;
-        
-        uint32_t cluster = getFileCluster(dir, str);
+        cluster = getFileCluster(dir, str);
+        printf("cluster: %i\n", cluster);
         if (cluster > 0)
             dir = readDirCluster(cluster);
     }
     
-
+    if((tokens.back()).compare("..") == 0 )
+    {
+        cluster = getFileCluster(dir, "..");
+        dir = readDirCluster(cluster);
+    }
+    
     return dir;
 }
 
@@ -344,12 +354,11 @@ std::vector<std::string> tokenizer(const std::string &path)
     {
         if(temp.compare("..") == 0)
         {
-            tokens.clear();
+            tokens.pop_back();
             continue;
         }
         else if(temp.compare(".") == 0)
         {
-            tokens.pop_back();
             continue;
         }
         else
@@ -397,6 +406,9 @@ int fat_open(const std::string &path)
         return -1;
 
     std::vector<std::string> tokens = tokenizer(path);
+    if(tokens.size() == 0)
+        return -1;
+
     std::string fileName = capitalizeString((tokens.back()));
     
     
