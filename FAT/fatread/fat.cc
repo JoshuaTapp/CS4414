@@ -3,7 +3,7 @@
 FILE *image;
 struct Fat32BPB *BPB;
 uint32_t *FAT; // the file allocation table
-std::vector<FAT_fd> fd_list(128, FAT_fd{nullptr, 0, true});
+std::vector<FAT_fd> fd_list(128, FAT_fd{DirEntry(), 0, true});
 /*
     Formula to get the first sector of cluster N
     ? FirstSectorofCluster = ((N – 2) * BPB_SecPerClus) + FirstDataSector;
@@ -86,12 +86,13 @@ uint32_t getNextClusterFromFAT(uint32_t cluster)
 }
 
 // reads the data into buffer from image[sectorNum : (sectorNum * sectorCount) ]
-int readSectors(void *buffer, uint32_t sectorNum, int count, int offset)
+int readSectors(char *buffer, uint32_t sectorNum, int count, int offset)
 {
     // * GOTO start of sector
-    int success = fseek(image, sectorNum * BPB->BPB_BytsPerSec, SEEK_SET);
+    long seekOffest = (long) sectorNum * BPB->BPB_BytsPerSec;
+    int success = fseek(image, seekOffest , SEEK_SET);
     // * move fpos += offset
-    success = fseek(image, offset, SEEK_CUR);
+    success = fseek(image, (long) offset, SEEK_CUR);
 
     // * sanity check on offset, if offset is past cluster space, return nothing.
     if(offset >= BPB->BPB_BytsPerSec * BPB->BPB_SecPerClus)
@@ -102,10 +103,11 @@ int readSectors(void *buffer, uint32_t sectorNum, int count, int offset)
         perror("Failed to seek in readSectors: ");
         return -1;
     }
-    int available = (BPB->BPB_BytsPerSec * BPB->BPB_SecPerClus) - offset;
+    int available = (int) (BPB->BPB_BytsPerSec * BPB->BPB_SecPerClus) - offset;
     int readSize = std::min(available, count);
 
     success = fread(buffer, 1, readSize, image);
+    //printf("readSectors() - sizeTest: available: %i\tcount: %i\treadSize: %i\tActual: %i\n", available, count, readSize, success);
 
     if (success != (int) readSize)
     {
@@ -116,14 +118,13 @@ int readSectors(void *buffer, uint32_t sectorNum, int count, int offset)
     return success;
 }
 
-int readCluster(uint32_t cluster, void *buffer, int count, int offset)
+int readCluster(uint32_t cluster, char *buffer, int count, int offset)
 {
     // Because our file is sector addressed, we have to convert the
     // cluster into a sector num and then read it.
     uint32_t dataAreaStartSector = getFirstDataSector();
     uint32_t clusterStartSector = (cluster - 2) * BPB->BPB_SecPerClus + dataAreaStartSector;
-
-    // ! REMEMBER TO CHANGE THIS WHEN YOU IMPLEMENT pread()
+    //printf("readCluster - sector: %u - count: %i - offset: %i\n", clusterStartSector, count, offset);
     return readSectors(buffer, clusterStartSector, count, offset);
 }
 
@@ -278,15 +279,20 @@ uint32_t getClusterFromPath(const std::string &path)
 
     std::vector<std::string> tokens = tokenizer(path);
     std::vector<DirEntry> dir = readDirCluster(BPB->BPB_RootClus);
-
+    if(tokens.size() == 0)
+        return BPB->BPB_RootClus;
     std::vector<std::string>::iterator itr = tokens.begin();
     for (; itr != --tokens.cend(); ++itr)
     {
         std::string str = *itr;
+        
         uint32_t cluster = getFileCluster(dir, str);
         //printf("getClusterFromPath(%s): token: %s cluster: 0x%x\n", path.c_str(), str.c_str(), cluster);
-        if (cluster > 0)
+        if (cluster >= 0)
         {
+            if(cluster == 0)
+                cluster = BPB->BPB_RootClus;
+
             dir = readDirCluster(cluster);
 
         }
@@ -304,15 +310,16 @@ std::vector<DirEntry> getDirEntryFromPath(const std::string &path)
     std::string rootPath = "/";
     dir = readDirCluster(BPB->BPB_RootClus);
     std::vector<std::string>::iterator itr = tokens.begin();
-    for (; itr != tokens.cend(); ++itr)
+    for (; itr != --tokens.cend(); ++itr)
     {
         std::string str = *itr;
-        if (str.size() < 1)
-            continue;
+        
         uint32_t cluster = getFileCluster(dir, str);
         if (cluster > 0)
             dir = readDirCluster(cluster);
     }
+    
+
     return dir;
 }
 
@@ -335,15 +342,20 @@ std::vector<std::string> tokenizer(const std::string &path)
     std::string temp;
     for (; getline(ss, temp, '/');)
     {
-
-        tokens.push_back(temp);
+        if(temp.compare("..") == 0)
+        {
+            tokens.clear();
+            continue;
+        }
+        else if(temp.compare(".") == 0)
+        {
+            tokens.pop_back();
+            continue;
+        }
+        else
+            tokens.push_back(temp);
     }
-    std::string pathTokens = "";
-    for(std::string t : tokens)
-    {
-        pathTokens += t;
-    }
-    //printf("PATH: %s\tTOKENIZED PATH: %s\n", path.c_str(), pathTokens.c_str());
+    
     return tokens;
 }
 
@@ -384,6 +396,11 @@ int fat_open(const std::string &path)
     if (image == NULL)
         return -1;
 
+    std::vector<std::string> tokens = tokenizer(path);
+    std::string fileName = capitalizeString((tokens.back()));
+    
+    
+    //printf("fileName: %s\n", fileName.c_str());
     // naive implementation of search for free fd
     for (uint64_t i = 0; i < fd_list.size(); i++)
     {
@@ -391,13 +408,21 @@ int fat_open(const std::string &path)
             continue;
 
         std::vector<DirEntry> dirs = getDirEntryFromPath(path);
-        if (dirs.size() == 0)
+        for(DirEntry d : dirs)
+        {
+            std::string dirName = capitalizeString(formatDirName(d.DIR_Name, 
+                ( (d.DIR_Attr & DirEntryAttributes::DIRECTORY) == DirEntryAttributes::DIRECTORY) ));
+            if(fileName.compare(dirName) == 0)
+            {
+                fd_list.at(i).dir = d;
+                break;
+            }
+        }
+        if (dirs.size() == 0) // ! removed: || fd_list.at(i).dir == nullptr
             return -1;
 
         fd_list.at(i).cluster = getClusterFromPath(path);
-
-        DirEntry dir = dirs.at(0);
-        fd_list.at(i).dir = &dir;
+        fd_list.at(i).free = false;
 
         return i;
     }
@@ -413,7 +438,7 @@ bool fat_close(int fd)
         return false;
 
     file->cluster = 0;
-    file->dir = nullptr;
+    file->dir = DirEntry();
     file->free = true;
 
     return true;
@@ -421,6 +446,7 @@ bool fat_close(int fd)
 
 int fat_pread(int fd, void *buffer, int count, int offset)
 {
+    std::vector<uint32_t> clusters;
     // * if fd is marked as FREE, nothing to read.
     if (fd_list.at(fd).free == true) 
     {
@@ -429,9 +455,39 @@ int fat_pread(int fd, void *buffer, int count, int offset)
     }
 
     FAT_fd fatFD = fd_list[fd];
-    printf("fd %i is taken. Cluster: \t%i\n", fd, fatFD.cluster);
+    //printf("fd %i is taken. Cluster: \t%i\n", fd, fatFD.cluster);
+    uint32_t nextCluster = fatFD.cluster;
 
-    return readCluster(fatFD.cluster, buffer, count, offset);
+    do
+    {
+        clusters.push_back(nextCluster);
+        nextCluster = getNextClusterFromFAT(nextCluster);
+    } while (nextCluster < 0x0FFFFFF8);
+   
+    int read = 0;
+    int clusterSize = (int) BPB->BPB_BytsPerSec * BPB->BPB_SecPerClus;
+    int startCluster = (offset / clusterSize);
+    int startOffset = offset % clusterSize;
+    
+    int fileSize = (int) fatFD.dir.DIR_FileSize;
+
+    if(fileSize < offset + count)
+        count = fileSize - offset;
+    
+    
+    //printf("pread count - passed: %i\t fileSize: %i\n", count, fileSize);
+
+    while(count > 0)
+    {
+        int readSize = readCluster(clusters.at(startCluster), &(((char *) buffer)[read]), count, startOffset);
+        //printf("pread'ing :: cluster#: %i\tread: %i\tcount: %i\tclusterIndex: %i\toffset: %i\ttotalRead: %i\n", clusters.at(startCluster), readSize, count, startCluster, startOffset, read);
+        
+        count -= readSize;
+        read += readSize;
+        startOffset = 0;
+        startCluster++;   
+    }
+    return read;
 }
 
 // error: return empty vector
@@ -492,14 +548,23 @@ void printBPB()
 
 void printDirEntry(DirEntry dir)
 {
+    std::string name = formatDirName(dir.DIR_Name, ((dir.DIR_Attr & 0x10) == 0x10));
     const char *text = "________________DIR INFO__________________\n"
                        "name: \t%s\n" 
                        "attributes: \t0x%x\n" 
                        "cluster: \t0x%x\n"
-                       "file size: \t%iB\n";
+                       "file size: \t0x%xB\n";
     printf(text,
-            formatDirName(dir.DIR_Name, (dir.DIR_Attr & DirEntryAttributes::DIRECTORY)),
+            name.c_str(),
             dir.DIR_Attr,
-            dir.DIR_FstClusLO | (dir.DIR_FstClusHI << 16),
+            (dir.DIR_FstClusLO | (dir.DIR_FstClusHI << 16)),
             dir.DIR_FileSize);
+}
+
+// Source: https://www.zditect.com/guide/cpp/how-to-convert-string-to-uppercase-cpp.html
+std::string capitalizeString(std::string s)
+{
+    transform(s.begin(), s.end(), s.begin(),
+                   [](unsigned char c){ return toupper(c); });
+    return s;
 }

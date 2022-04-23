@@ -73,7 +73,7 @@ enum DirEntryAttributes {
     * Struct representing file descriptors
 */
 struct FAT_fd {
-    DirEntry *dir;
+    DirEntry dir;
     uint32_t cluster;
     bool free;
 };
@@ -100,4 +100,5 @@ bool readClusterNoOffset(uint32_t cluster, void* buffer);
 
 void printBPB();
 void printDirEntry(DirEntry dir);
+std::string capitalizeString(std::string s);
 #endif
