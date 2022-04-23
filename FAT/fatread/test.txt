@@ -12,160 +12,51 @@ RootClus: 	2
 FirstDataSec: 	1984
 clusterSize: 	2048
 __________________________________________
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 1156
-cluster: 0
-cluster: 0
-cluster: 1156
-cluster: 0
-cluster: 0
-cluster: 1156
-cluster: 0
-cluster: 0
-cluster: 1156
-cluster: 0
-cluster: 0
-cluster: 3
-cluster: 0
-cluster: 0
-cluster: 4177
-cluster: 0
-cluster: 0
-cluster: 4177
-cluster: 0
-cluster: 0
-cluster: 4177
-cluster: 0
-cluster: 0
-cluster: 4177
-cluster: 0
-cluster: 0
-cluster: 4177
-cluster: 0
-cluster: 0
-cluster: 4177
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 3148
-cluster: 0
-cluster: 0
-cluster: 3148
-cluster: 0
-cluster: 0
-cluster: 1280
-cluster: 1281
-cluster: 1283
-cluster: 1285
-cluster: 1288
-cluster: 0
-cluster: 0
-cluster: 1280
-cluster: 1281
-cluster: 1283
-cluster: 1285
-cluster: 1288
-cluster: 0
-cluster: 0
-cluster: 1280
-cluster: 1281
-cluster: 1283
-cluster: 1285
-cluster: 0
-cluster: 0
-cluster: 1280
-cluster: 1281
-cluster: 1283
-cluster: 1285
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 1156
-cluster: 1157
-cluster: 0
-cluster: 0
-cluster: 1156
-cluster: 1157
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 0
-cluster: 1280
-cluster: 1281
-cluster: 1283
-cluster: 1285
-cluster: 1288
-cluster: 0
-cluster: 0
-cluster: 1280
-cluster: 1281
-cluster: 1283
-cluster: 1285
-cluster: 1288
-cluster: 0
-cluster: 0
-cluster: 3148
-cluster: 0
-cluster: 0
-cluster: 3148
-ts for simple open+read+size: path=/congrats.txt.
+ddir /: passed.
+PASSED tests for failed readdir: readdir before mount.
+(1 subtests passed and 0 subtests failed.)
+
+    mounting testdisk1.raw successful: passed.
+Running test group for readdir of root dir: path=/:
+    people is a directory: passed.
+    people directory was found in /: passed.
+    congrats.txt was found in /: passed.
+    a1 was found in /: passed.
+    example1 was found in /: passed.
+PASSED tests for readdir of root dir: path=/.
+(5 subtests passed and 0 subtests failed.)
+
+Running test group for readdir of root dir: path=/:
+    people is a directory: passed.
+    people directory was found in /: passed.
+    congrats.txt was found in /: passed.
+    a1 was found in /: passed.
+    example1 was found in /: passed.
+PASSED tests for readdir of root dir: path=/.
+(5 subtests passed and 0 subtests failed.)
+
+Running test group for readdir of root dir -- past 0xE5: path=/:
+    A3 and A99 was found in /: passed.
+PASSED tests for readdir of root dir -- past 0xE5: path=/.
+(1 subtests passed and 0 subtests failed.)
+
+Running test group for readdir of root dir -- multiple clusters: path=/:
+    A2 and EXAMP999.TXT was found in /: passed.
+PASSED tests for readdir of root dir -- multiple clusters: path=/.
+(1 subtests passed and 0 subtests failed.)
+
+Running test group for simple open+read: path=/congrats.txt:
+    opening /congrats.txt: passed.
+    path=/congrats.txt: contents [comparison follows if failure]: passed.
+    path=/congrats.txt: size: passed.
+    path=/congrats.txt: no writing from past end of file: passed.
+PASSED tests for simple open+read: path=/congrats.txt.
+(4 subtests passed and 0 subtests failed.)
+
+Running test group for simple open+read+size: path=/congrats.txt:
+    opening /congrats.txt: passed.
+    path=/congrats.txt: contents [comparison follows if failure]: passed.
+PASSED tests for simple open+read+size: path=/congrats.txt.
 (2 subtests passed and 0 subtests failed.)
 
 Running test group for pread with various offsets and counts, contents/size/not exceeding buffer: path=/congrats.txt:
@@ -3431,28 +3322,31 @@ PASSED tests for simple open+read+size: path=/a2/example3.txt.
 (2 subtests passed and 0 subtests failed.)
 
 Running test group for readdir of root dir: path=/people/..:
-    people directory was found in /people/..: failed.
-    congrats.txt was found in /people/..: failed.
-    a1 was found in /people/..: failed.
-    example1 was found in /people/..: failed.
-FAILED tests for readdir of root dir: path=/people/...
-(0 subtests passed and 4 subtests failed.)
+    people is a directory: passed.
+    people directory was found in /people/..: passed.
+    congrats.txt was found in /people/..: passed.
+    a1 was found in /people/..: passed.
+    example1 was found in /people/..: passed.
+PASSED tests for readdir of root dir: path=/people/...
+(5 subtests passed and 0 subtests failed.)
 
 Running test group for readdir of root dir: path=/PEoPLE/..:
-    people directory was found in /PEoPLE/..: failed.
-    congrats.txt was found in /PEoPLE/..: failed.
-    a1 was found in /PEoPLE/..: failed.
-    example1 was found in /PEoPLE/..: failed.
-FAILED tests for readdir of root dir: path=/PEoPLE/...
-(0 subtests passed and 4 subtests failed.)
+    people is a directory: passed.
+    people directory was found in /PEoPLE/..: passed.
+    congrats.txt was found in /PEoPLE/..: passed.
+    a1 was found in /PEoPLE/..: passed.
+    example1 was found in /PEoPLE/..: passed.
+PASSED tests for readdir of root dir: path=/PEoPLE/...
+(5 subtests passed and 0 subtests failed.)
 
 Running test group for readdir of root dir: path=/Media/..:
-    people directory was found in /Media/..: failed.
-    congrats.txt was found in /Media/..: failed.
-    a1 was found in /Media/..: failed.
-    example1 was found in /Media/..: failed.
-FAILED tests for readdir of root dir: path=/Media/...
-(0 subtests passed and 4 subtests failed.)
+    people is a directory: passed.
+    people directory was found in /Media/..: passed.
+    congrats.txt was found in /Media/..: passed.
+    a1 was found in /Media/..: passed.
+    example1 was found in /Media/..: passed.
+PASSED tests for readdir of root dir: path=/Media/...
+(5 subtests passed and 0 subtests failed.)
 
 Running test group for simple open+read: path=/a1/b1/b2/b3/b4/example9.txt:
     opening /a1/b1/b2/b3/b4/example9.txt: passed.
@@ -5047,8 +4941,8 @@ Running test group for simple open+read+size: path=/a2/example3.txt:
 PASSED tests for simple open+read+size: path=/a2/example3.txt.
 (2 subtests passed and 0 subtests failed.)
 
-Passed 77 test groups and failed 3 test groups
-(by passing 4600 subtests and failing 12 subtests)
+Passed 80 test groups and failed 0 test groups
+(by passing 4615 subtests and failing 0 subtests)
 
 Note that the number of tests/subtests is not a very good indication of how
 much you've completed; for example there several tests reading

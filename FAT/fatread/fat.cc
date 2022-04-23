@@ -5,29 +5,6 @@ struct Fat32BPB *BPB;
 uint32_t *FAT; // the file allocation table
 std::vector<FAT_fd> fd_list(128, FAT_fd{DirEntry(), 0, true});
 /*
-    Formula to get the first sector of cluster N
-    ? FirstSectorofCluster = ((N – 2) * BPB_SecPerClus) + FirstDataSector;
-
-    Formula to compute the entry in FAT for cluster N
-    ? FATOffset = N * 4;
-
-    Formula to find sector number in FAT sector that contains entry for cluster N
-    ? ThisFATSecNum = BPB_ResvdSecCnt + (FATOffset / BPB_BytsPerSec);
-
-    offset for entry w.r.t ThisFATSecNum
-    REM: remainder / modulus
-    ? ThisFATEntOffset = REM(FATOffset / BPB_BytsPerSec);
-
-    Put these above 2 to get the value with this,
-    Where SecBuff is a byte array created from reading ThisFATSecNum
-    ? FAT32ClusEntryVal = (*((DWORD *) &SecBuff[ThisFATEntOffset])) & 0x0FFFFFFF;
-
-    Formula to get total count of sectors in the data region for FAT32
-    ? TotalDataSectors = BPB_TotSec32 - (BPB_ResvdSecCnt + (BPB_NumFATs * BPB_FATSz32))
-
-
-
-
     ! Cluster and Sector numbers are uint32_t
     ! each sector can be though of as uint8_t[]
 
@@ -52,7 +29,6 @@ std::vector<FAT_fd> fd_list(128, FAT_fd{DirEntry(), 0, true});
             ? uint32_t NextClusterNumber = FATentry(N) = (FAT[N*4 % BPB_BytsPerSec] & 0x0FFFFFFF)
         * Sector Address w.r.t Cluster N
             ? (N - 2) * BPB_SecPerClus + DataSectorStart
-
 */
 
 // Since we are doing FAT32, this will be the cluster AFTER FAT Area
@@ -107,7 +83,6 @@ int readSectors(char *buffer, uint32_t sectorNum, int count, int offset)
     int readSize = std::min(available, count);
 
     success = fread(buffer, 1, readSize, image);
-    //printf("readSectors() - sizeTest: available: %i\tcount: %i\treadSize: %i\tActual: %i\n", available, count, readSize, success);
 
     if (success != (int) readSize)
     {
@@ -124,7 +99,7 @@ int readCluster(uint32_t cluster, char *buffer, int count, int offset)
     // cluster into a sector num and then read it.
     uint32_t dataAreaStartSector = getFirstDataSector();
     uint32_t clusterStartSector = (cluster - 2) * BPB->BPB_SecPerClus + dataAreaStartSector;
-    //printf("readCluster - sector: %u - count: %i - offset: %i\n", clusterStartSector, count, offset);
+    
     return readSectors(buffer, clusterStartSector, count, offset);
 }
 
@@ -154,7 +129,6 @@ bool readClusterNoOffset(uint32_t cluster, void* buffer)
     uint32_t dataAreaStartSector = getFirstDataSector();
     uint32_t clusterStartSector = (cluster - 2) * BPB->BPB_SecPerClus + dataAreaStartSector;
 
-    // ! REMEMBER TO CHANGE THIS WHEN YOU IMPLEMENT pread()
     return readSectorsNoOffset(buffer, clusterStartSector, BPB->BPB_SecPerClus);
 }
 
@@ -219,7 +193,6 @@ std::string formatDirName(uint8_t DIR_Name[11], bool isDir)
         }
         fileName += c;
     }
-    //printf("fileName: %s\t", fileName.c_str());
 
     for (int i = 8; i < 11; i++)
     {
@@ -230,38 +203,30 @@ std::string formatDirName(uint8_t DIR_Name[11], bool isDir)
         }
         extName += c;
     }
-    //printf("extName: \t%s", extName.c_str());
+    
     if (isDir)
         result = fileName;
     else
         result = fileName + "." + extName;
         
-    
-    //printf("result: %s\n", result.c_str());
-    return result;
+    return capitalizeString(result);
 }
 
 uint32_t getFileCluster(std::vector<DirEntry> dirEntry, std::string fileName)
 {
 
-    std::string searchName = fileName;
-    std::transform(searchName.begin(), searchName.end(), searchName.begin(),
-                   [](unsigned char c)
-                   {
-                       return std::toupper(c);
-                   });
+    std::string searchName = capitalizeString(fileName);
 
     uint32_t foundCluster = 0;
     for (DirEntry dir : dirEntry)
     {
-        std::string thisDirName = formatDirName(dir.DIR_Name, (dir.DIR_Attr == 0x10));
-        //printf("path name: %s \tlookDirName: %s\n", searchName.c_str(), thisDirName.c_str());
+        std::string thisDirName = formatDirName(dir.DIR_Name, (dir.DIR_Attr & 0x10) == 0x10 );
+        
         if (searchName.compare(thisDirName) == 0)
         {
-            //printf("found dir: %s", thisDirName.c_str());
             foundCluster = dir.DIR_FstClusHI << 16;
             foundCluster += dir.DIR_FstClusLO;
-            //printf("\t cluster: 0x%x\n", foundCluster);
+        
             break;
         }
     }
@@ -287,7 +252,6 @@ uint32_t getClusterFromPath(const std::string &path)
         std::string str = *itr;
         
         uint32_t cluster = getFileCluster(dir, str);
-        //printf("getClusterFromPath(%s): token: %s cluster: 0x%x\n", path.c_str(), str.c_str(), cluster);
         if (cluster >= 0)
         {
             if(cluster == 0)
@@ -319,7 +283,7 @@ std::vector<DirEntry> getDirEntryFromPath(const std::string &path)
     {
         std::string str = *itr;
         cluster = getFileCluster(dir, str);
-        printf("cluster: %i\n", cluster);
+        
         if (cluster > 0)
             dir = readDirCluster(cluster);
     }
@@ -327,6 +291,16 @@ std::vector<DirEntry> getDirEntryFromPath(const std::string &path)
     if((tokens.back()).compare("..") == 0 )
     {
         cluster = getFileCluster(dir, "..");
+        dir = readDirCluster(cluster);
+    }
+    else if((tokens.back()).compare(".") == 0 )
+    {
+        cluster = getFileCluster(dir, ".");
+        dir = readDirCluster(cluster);
+    }
+    else if((tokens.back()).find('.') == std::string::npos)
+    {
+        cluster = getFileCluster(dir, (tokens.back()).c_str() );
         dir = readDirCluster(cluster);
     }
     
@@ -412,7 +386,6 @@ int fat_open(const std::string &path)
     std::string fileName = capitalizeString((tokens.back()));
     
     
-    //printf("fileName: %s\n", fileName.c_str());
     // naive implementation of search for free fd
     for (uint64_t i = 0; i < fd_list.size(); i++)
     {
@@ -430,7 +403,7 @@ int fat_open(const std::string &path)
                 break;
             }
         }
-        if (dirs.size() == 0) // ! removed: || fd_list.at(i).dir == nullptr
+        if (dirs.size() == 0) 
             return -1;
 
         fd_list.at(i).cluster = getClusterFromPath(path);
@@ -467,7 +440,7 @@ int fat_pread(int fd, void *buffer, int count, int offset)
     }
 
     FAT_fd fatFD = fd_list[fd];
-    //printf("fd %i is taken. Cluster: \t%i\n", fd, fatFD.cluster);
+    
     uint32_t nextCluster = fatFD.cluster;
 
     do
@@ -487,12 +460,11 @@ int fat_pread(int fd, void *buffer, int count, int offset)
         count = fileSize - offset;
     
     
-    //printf("pread count - passed: %i\t fileSize: %i\n", count, fileSize);
+    
 
     while(count > 0)
     {
         int readSize = readCluster(clusters.at(startCluster), &(((char *) buffer)[read]), count, startOffset);
-        //printf("pread'ing :: cluster#: %i\tread: %i\tcount: %i\tclusterIndex: %i\toffset: %i\ttotalRead: %i\n", clusters.at(startCluster), readSize, count, startCluster, startOffset, read);
         
         count -= readSize;
         read += readSize;
@@ -510,12 +482,9 @@ std::vector<AnyDirEntry> fat_readdir(const std::string &path)
     if (image == NULL)
         return result;
 
-    uint32_t cluster;
-    //printf("path: %s \tpath = root: %i\n", path.c_str(), (path == "/"));
-    cluster = getClusterFromPath(path);
-
-    //printf("IN fat_readdir\t getClusterFromPath(%s): 0x%x\n", path.c_str(), cluster);
-    std::vector<DirEntry> dirEntries = readDirCluster(cluster);
+    std::vector<DirEntry> dirEntries = getDirEntryFromPath(path);
+    if(dirEntries.size() == 0)
+        dirEntries = readDirCluster(BPB->BPB_RootClus);
     for (DirEntry d : dirEntries)
     {
         AnyDirEntry anyDir;
